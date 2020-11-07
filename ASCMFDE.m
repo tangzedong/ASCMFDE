@@ -1,6 +1,6 @@
-function data_MFDE = ASCMFDE(Tasks,pop,gen,selection_process,rmp,p_il,reps,index)
-%Directional Distribution Based MFDE function: implementation of MFDE algorithm
-%Author: Zedong Tang
+function data = ASCMFDE(Tasks,pop,gen,selection_process,rmp,p_il,reps,index)
+%Directional Distribution Based MFDE function
+%Author: Zedong Tang (omegatangzd@gmail.com)
 %Initial Data: May 21, 2019
 clc
 tic
@@ -71,8 +71,8 @@ for rep = 1:reps
     end
     
     
-    lb=zeros(1,D_multitask); % 参数取值下界
-    ub=ones(1,D_multitask); % 参数取值上界
+    lb=zeros(1,D_multitask); % lower bound
+    ub=ones(1,D_multitask); % upper bound
     F=0.5;
     CR=0.7;
     
@@ -150,7 +150,7 @@ for rep = 1:reps
         bsf3 = [bsf2(end),bsf2(2:end)];
         
         for i = 1 : pop
-            x=population(i).rnvec; % 提取个体位置
+            x=population(i).rnvec; % extract the position of individual
             
             asf=cell2mat(group(population(i).skill_factor));
             bsf=cell2mat(group(2/population(i).skill_factor));
@@ -180,13 +180,11 @@ for rep = 1:reps
                 sourceskill2 = population(p2).skill_factor;
                 sourceskill3 = population(p3).skill_factor;
                 
-                %把解映射到target subspace
+                %project to the target subspace
                 childsf=1;
                 p2pos = (population(p2).rnvec - Pm(sourceskill2,:)) * QQ{sourceskill2};
                 p3pos = (population(p3).rnvec - Pm(sourceskill3,:)) * QQ{sourceskill3};
                 nn = ceil(3*rand());
-                F = 0.5;
-                CR = 0.7;
 
                 switch nn
                     case 2
@@ -204,21 +202,21 @@ for rep = 1:reps
                 p3=asf(ceil(rand()*length(asf)));while(p2 == p3 && p3 == i)p3=asf(ceil(rand()*length(asf)));end
                 p4=asf(ceil(rand()*length(asf)));while(p4 == p2 && p4 == p3 && p4 == i)p4=asf(ceil(rand()*length(asf)));end
                 
-                y=population(p1).rnvec+F*(population(p2).rnvec-population(p3).rnvec);% + F*(Pm(population(p1).skill_factor,:)-population(p1).rnvec); % 产生中间体
+                y=population(p1).rnvec+F*(population(p2).rnvec-population(p3).rnvec);
             end
-            % 变异操作 Mutation
+            % mutation
             y = mutate(y, length(y), 0.01);
-            % 防止中间体越界
+            % truncation
             y=max(y,lb);
             y=min(y,ub);
             
-            z=zeros(size(x)); % 初始化一个新个体
-            j0=randi([1,numel(x)]); % 产生一个伪随机数，即选取待交换维度编号
-            for j=1:numel(x) % 遍历每个维度
-                if j==j0 || rand<=CR % 如果当前维度是待交换维度或者随机概率小于交叉概率
-                    z(j)=y(j); % 新个体当前维度值等于中间体对应维度值
+            z=zeros(size(x)); 
+            j0=randi([1,numel(x)]); 
+            for j=1:numel(x)
+                if j==j0 || rand<=CR 
+                    z(j)=y(j);
                 else
-                    z(j)=x(j); % 新个体当前维度值等于当前个体对应维度值
+                    z(j)=x(j);
                 end
             end
             
@@ -310,12 +308,12 @@ for rep = 1:reps
                 population(count)=skill_group(skill).individuals(RouletteWheelSelection([skill_group(skill).individuals.scalar_fitness]));
             end
         end
-        disp(['MFDE Generation = ', num2str(generation), ' best factorial costs = ', num2str(bestobj), ' taskid = ', num2str(index)]);
+        disp(['ASCMFDE Generation = ', num2str(generation), ' best factorial costs = ', num2str(bestobj), ' taskid = ', num2str(index)]);
     end
 end
 
-data_MFDE.wall_clock_time=toc;
-data_MFDE.EvBestFitness=EvBestFitness;
-data_MFDE.bestInd_data=bestInd_data;
-data_MFDE.TotalEvaluations=TotalEvaluations;
+data.wall_clock_time=toc;
+data.EvBestFitness=EvBestFitness;
+data.bestInd_data=bestInd_data;
+data.TotalEvaluations=TotalEvaluations;
 end
